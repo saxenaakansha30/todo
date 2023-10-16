@@ -11,17 +11,23 @@
         <a class="nav-link" href="/">Home</a>
       </li>
       <li class="nav-item active">
-        <a class="nav-link" href="/progress/1">Progress</a>
+        <a class="nav-link" href="/progress">Progress</a>
       </li>
       <li class="nav-item active">
-        <a class="nav-link" href="/manage-task/1">Manage Task</a>
+        <a class="nav-link" href="/manage-task">Manage Task</a>
       </li>
-      <li class="nav-item active">
-        <a class="nav-link" href="/register">Register</a>
-      </li>
-      <li class="nav-item active">
-        <a class="nav-link disabled" href="/login">Login</a>
-      </li>
+      {% if active %}
+        <li class="nav-item active">
+          <a class="nav-link disabled" href="/logout">Logout</a>
+        </li>
+      {% else %}
+        <li class="nav-item active">
+          <a class="nav-link" href="/register">Register</a>
+        </li>
+        <li class="nav-item active">
+          <a class="nav-link disabled" href="/login">Login</a>
+        </li>
+      {% endif %}
     </ul>
     <span class="navbar-text">
       Consistency is the Key

@@ -19,7 +19,7 @@ from fastapi.security import OAuth2PasswordRequestForm
 from fastapi import status
 from starlette.status import HTTP_400_BAD_REQUEST
 from datetime import timedelta
-from fastapi import Form
+from fastapi import Form, Response
 
 load_dotenv()
 SECRET_KEY = os.getenv('SECRET_KEY')
@@ -51,7 +51,9 @@ def verify_password(plain_password, hashed_password):
   return pwd_ctx.verify(plain_password, hashed_password)
 
 @manager.user_loader()
-def get_user(email: str, db: Session = Depends(get_db)):
+def get_user(email: str, db: Session = None):
+  if db is None:
+    db = SessionLocal()
   return crud.get_user_by_email(db, email)
 
 def authenticate_user(email: str, password: str, db: Session = Depends(get_db)):
@@ -79,8 +81,8 @@ app.add_exception_handler(NotAuthenticatedException, not_authenticated_exception
 #
 
 @app.get("/", response_class=HTMLResponse)
-def home(request: Request):
-  return templates.TemplateResponse("index.html", {"request": request})
+def home(request: Request, user: schema.User = Depends(manager)):
+  return templates.TemplateResponse("index.html", {"request": request, "active": True})
 
 @app.get("/login", response_class=HTMLResponse)
 def get_login(request: Request):
@@ -128,47 +130,32 @@ def register(
 
   return templates.TemplateResponse("/login.html", {"request": request}, status_code=status.HTTP_302_FOUND)
 
-@app.get("/progress/{user_id}")
-def get_progress(request: Request, user_id: int, db: Session = Depends(get_db)):
-  user = crud.get_user(db, user_id)
-
-  tasks = crud.get_task_by_date(db, date.today(), user_id)
-  completed_task = crud.get_completed_task_by_owner_id(db, date.today(), user_id)
+@app.get("/progress")
+def get_progress(request: Request, db: Session = Depends(get_db), user: schema.User = Depends(manager)):
+  tasks = crud.get_task_by_date(db, date.today(), user.id)
+  completed_task = crud.get_completed_task_by_owner_id(db, date.today(), user.id)
   progress = (len(completed_task) / len(tasks)) * 100
 
-  return templates.TemplateResponse("progress.html", {"request": request, "tasks": tasks, "progress": progress, "user_id": user_id})
+  return templates.TemplateResponse("progress.html", {"request": request, "tasks": tasks, "progress": progress, "active": True})
 
 
-@app.get("/manage-task/{user_id}", response_class=HTMLResponse)
-def get_tasks(request: Request, user_id: int, db: Session = Depends(get_db)):
-  user = crud.get_user(db, user_id)
+@app.get("/manage-task", response_class=HTMLResponse)
+def get_tasks(request: Request, db: Session = Depends(get_db), user: schema.User = Depends(manager)):
+  tasks = crud.get_pending_task_by_owner_id(db, date.today(), user.id)
 
-  tasks = crud.get_pending_task_by_owner_id(db, date.today(), user_id)
+  return templates.TemplateResponse("manage-task.html", {"request": request, "tasks": tasks, "active": True})
 
-  return templates.TemplateResponse("manage-task.html", {"request": request, "tasks": tasks, "user_id": user_id})
-
-@app.post("/user", response_model=schema.User)
-def create_user(user: schema.UserCreate, db: Session = Depends(get_db)):
-  db_user = crud.get_user_by_email(db, user.email)
-
-  if db_user:
-    raise HTTPException(status_code=404, detail="User already exist")
-
-  return crud.create_user(db, user)
-
-@app.post("/user/{user_id}/task/")
+@app.post("/task")
 def create_task(
-  user_id: int,
   title: str = Form(...),
-  db: Session = Depends(get_db)):
-  db_user = crud.get_user(db, user_id)
+  db: Session = Depends(get_db),
+  user: schema.User = Depends(manager)
+  ):
 
-  if not db_user:
-    return RedirectResponse("/404.html", status_code=status.HTTP_404_NOT_FOUND)
   task = schema.TaskCreate(title=title)
-  crud.create_task(db, task, user_id)
+  crud.create_task(db, task, user.id)
 
-  return RedirectResponse("/manage-task/1", status_code=status.HTTP_302_FOUND)
+  return RedirectResponse("/manage-task", status_code=status.HTTP_302_FOUND)
 
 
 @app.post("/task/{task_id}/complete")
@@ -180,7 +167,7 @@ def complete_task(task_id: int, db: Session = Depends(get_db)):
 
   crud.mark_task_complete(db, db_task)
 
-  return RedirectResponse("/manage-task/1", status_code=status.HTTP_302_FOUND)
+  return RedirectResponse("/manage-task", status_code=status.HTTP_302_FOUND)
 
 
 @app.post("/task/{task_id}/delete")
@@ -193,8 +180,14 @@ def delete_task(
 
   crud.delete_task(db, db_task)
 
-  return RedirectResponse("/manage-task/1", status_code=status.HTTP_302_FOUND)
+  return RedirectResponse("/manage-task", status_code=status.HTTP_302_FOUND)
 
 @app.get("/404", response_class=HTMLResponse)
 def search(request: Request):
   return templates.TemplateResponse("404.html", {"request": request})
+
+@app.get("/logout")
+def logout(response: Response):
+    response = RedirectResponse("/")
+    manager.set_cookie(response,None)
+    return response
