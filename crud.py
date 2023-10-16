@@ -24,8 +24,8 @@ def get_task(db: Session, task_id: int):
 def get_task_by_owner_id(db: Session, owner_id: int, skip: int = 0, limit: int = 100):
   return db.query(model.Task).filter(model.Task.owner_id == owner_id).offset(skip).limit(limit).all()
 
-def get_task_by_date(db: Session, date: str):
-  return db.query(model.Task).filter(model.Task.created_date == date).all()
+def get_task_by_date(db: Session, date: str, owner_id: int):
+  return db.query(model.Task).filter(model.Task.created_date == date, model.Task.owner_id == owner_id).all()
 
 def create_task(db: Session, task: schema.TaskCreate, user_id: int):
   db_task = model.Task(**task.model_dump(), owner_id = user_id, created_time = datetime.now(), created_date = date.today())
@@ -45,4 +45,3 @@ def mark_task_complete(db: Session, task: model.Task):
 def delete_task(db: Session, task: model.Task):
   db.delete(task)
   db.commit()
-
