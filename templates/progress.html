@@ -1,0 +1,49 @@
+<!DOCTYPE html>
+<html lang="en">
+{% include "header.html" %}
+
+<body>
+  {% include "navigation.html" %}
+
+  <div class="container">
+    <div class="jumbotron text-light bg-dark">
+      <h1>Today's task Overview</h1>
+      <p>List of tasks you have completed today and yet to complete. Give yourself a pat on the back.</p>
+
+      <div class="progress">
+        <div class="progress-bar progress-bar-striped progress-bar-animated bg-success"
+          role="progressbar" aria-valuenow="{{ progress }}" aria-valuemin="0" aria-valuemax="100"
+          style="width: {{ progress }}%"></div>
+      </div>
+    </div>
+
+    <div class="row">
+      <div class="col-md-4">
+        <figure class="figure">
+          <img src="/static/images/todo.jpeg" class="figure-img img-fluid rounded"
+            alt="Todo app image.">
+          <figcaption class="figure-caption text-center">Consistency is the Key.</figcaption>
+        </figure>
+      </div>
+      <div class="col-md-8">
+        <ol class="list-group list-group-numbered">
+          {% for task in tasks %}
+              {% if task.status %}
+              <li class="list-group-item list-group-item-success">
+                <del>{{ task.title }}</del>
+              </li>
+              {% else %}
+              <li class="list-group-item">
+                {{ task.title }}
+              </li>
+              {% endif %}
+          {% endfor %}
+        </ol>
+      </div>
+    </div>
+  </div>
+
+  {% include "footer.html" %}
+</body>
+
+</html>

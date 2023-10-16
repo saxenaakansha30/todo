@@ -1,7 +1,6 @@
-<form class="shadow-lg p-3 mb-5 bg-light rounded">
+<form action="/user/{{ user_id }}/task" method="POST" class="shadow-lg p-3 mb-5 bg-light rounded">
   <div class="form-group">
-    <textarea class="form-control" id="exampleFormControlTextarea1"
-      rows="3"></textarea>
+    <textarea class="form-control" id="title" rows="3" name="title"></textarea>
   </div>
   <button type="submit" class="btn btn-primary text">Add Task</button>
 </form>

@@ -45,3 +45,9 @@ def mark_task_complete(db: Session, task: model.Task):
 def delete_task(db: Session, task: model.Task):
   db.delete(task)
   db.commit()
+
+def get_completed_task_by_owner_id(db: Session, date: str, owner_id: int):
+  return db.query(model.Task).filter(model.Task.created_date == date, model.Task.owner_id == owner_id, model.Task.status == 1).all()
+
+def get_pending_task_by_owner_id(db: Session, date: str, owner_id: int):
+  return db.query(model.Task).filter(model.Task.created_date == date, model.Task.owner_id == owner_id, model.Task.status == 0).all()
