@@ -81,8 +81,8 @@ app.add_exception_handler(NotAuthenticatedException, not_authenticated_exception
 #
 
 @app.get("/", response_class=HTMLResponse)
-def home(request: Request, user: schema.User = Depends(manager)):
-  return templates.TemplateResponse("index.html", {"request": request, "active": True})
+def home(request: Request):
+  return templates.TemplateResponse("index.html", {"request": request})
 
 @app.get("/login", response_class=HTMLResponse)
 def get_login(request: Request):
@@ -134,7 +134,9 @@ def register(
 def get_progress(request: Request, db: Session = Depends(get_db), user: schema.User = Depends(manager)):
   tasks = crud.get_task_by_date(db, date.today(), user.id)
   completed_task = crud.get_completed_task_by_owner_id(db, date.today(), user.id)
-  progress = (len(completed_task) / len(tasks)) * 100
+  progress = 0
+  if (len(tasks) > 0):
+    progress = (len(completed_task) / len(tasks)) * 100
 
   return templates.TemplateResponse("progress.html", {"request": request, "tasks": tasks, "progress": progress, "active": True})
 
